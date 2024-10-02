@@ -1,0 +1,25 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "0.1.0",
+	"FriendlyName": "Ecsact Net",
+	"Description": "Ecsact Net integration for Unreal Engine",
+	"Category": "Other",
+	"CreatedBy": "Seaube",
+	"CreatedByURL": "https://seaube.com",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "https://discord.gg/vKxQztg7gB",
+	"CanContainContent": true,
+	"IsBetaVersion": true,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules":
+	[
+		{
+			"Name": "EcsactNet",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}
