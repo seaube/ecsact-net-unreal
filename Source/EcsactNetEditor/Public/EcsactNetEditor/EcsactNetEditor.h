@@ -1,11 +1,14 @@
 #include "CoreMinimal.h"
+#include "Framework/MultiBox/MultiBoxExtender.h"
 #include "Modules/ModuleManager.h"
 #include "HttpResultCallback.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(EcsactNetEditor, Log, All);
 
-class FEcsactNetEditorModule : public IModuleInterface {
-	class UEcsactNetHttpClient* HttpClient;
+class ECSACTNETEDITOR_API FEcsactNetEditorModule : public IModuleInterface {
+	class UEcsactNetHttpClient*    HttpClient;
+	TSharedPtr<class FExtender>    MenuExtender;
+	TArray<FMenuExtensionDelegate> ToolMenuExtensionDelegates;
 
 	auto OnSettingsModified() -> bool;
 	auto AddMenuEntry(class FMenuBuilder&) -> void;
@@ -17,6 +20,10 @@ class FEcsactNetEditorModule : public IModuleInterface {
 public:
 	FEcsactNetEditorModule();
 	~FEcsactNetEditorModule();
+
+	auto AddEcsactNetToolsMenuExtension(
+		const FMenuExtensionDelegate& MenuExtensionDelegate
+	) -> void;
 
 	auto StartupModule() -> void override;
 	auto ShutdownModule() -> void override;

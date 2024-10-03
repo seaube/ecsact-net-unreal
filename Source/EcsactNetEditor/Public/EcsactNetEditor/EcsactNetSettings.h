@@ -10,6 +10,17 @@ class ECSACTNETEDITOR_API UEcsactNetSettings : public UObject {
 public:
 	UEcsactNetSettings();
 
+	/**
+	 * Ecsact Net endpoint prefix.
+	 *
+	 * By default this should be https://api.seaube.com/v1/
+	 */
+	UPROPERTY(EditAnywhere, Config, Category = "API")
+	FString EndpointPrefix;
+
+	/**
+	 * Ecsact Project ID
+	 */
 	UPROPERTY(EditAnywhere, Config, Category = "Project")
-	FString project_id;
+	FString ProjectID;
 };

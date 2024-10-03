@@ -56,10 +56,23 @@ FEcsactNetEditorModule::~FEcsactNetEditorModule() {
 auto FEcsactNetEditorModule::StartupModule() -> void {
 	HttpClient = NewObject<UEcsactNetHttpClient>();
 
+	auto& settings_module =
+		FModuleManager::GetModuleChecked<ISettingsModule>("Settings");
+	auto settings_container = settings_module.GetContainer("Project");
+	settings_module.RegisterSettings(
+		"Project",
+		"Plugins",
+		"EcsactNet",
+		LOCTEXT("SettingsName", "Ecsact Net"),
+		LOCTEXT("SettingsDescription", "Configuration settings for Ecsact Net"),
+		GetMutableDefault<UEcsactNetSettings>()
+	);
+
 	auto& level_editor_module =
 		FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
-	TSharedPtr<FExtender> menu_extender = MakeShareable(new FExtender());
-	menu_extender->AddMenuExtension(
+	MenuExtender = MakeShareable(new FExtender());
+
+	MenuExtender->AddMenuExtension(
 		"Tools",
 		EExtensionHook::After,
 		nullptr,
@@ -69,7 +82,13 @@ auto FEcsactNetEditorModule::StartupModule() -> void {
 		)
 	);
 
-	level_editor_module.GetMenuExtensibilityManager()->AddExtender(menu_extender);
+	level_editor_module.GetMenuExtensibilityManager()->AddExtender(MenuExtender);
+}
+
+auto FEcsactNetEditorModule::AddEcsactNetToolsMenuExtension(
+	const FMenuExtensionDelegate& MenuExtensionDelegate
+) -> void {
+	ToolMenuExtensionDelegates.Add(MenuExtensionDelegate);
 }
 
 auto FEcsactNetEditorModule::AddMenuEntry(FMenuBuilder& MenuBuilder) -> void {
@@ -87,6 +106,12 @@ auto FEcsactNetEditorModule::AddMenuEntry(FMenuBuilder& MenuBuilder) -> void {
 			FSlateIcon(),
 			FUIAction(FExecuteAction::CreateLambda([this] { ReplaceEcsactFiles(); }))
 		);
+
+		// These delegates are from other modules that want to put menu items in the
+		// ecsact net tools section
+		for(auto tool_menu_delegate : ToolMenuExtensionDelegates) {
+			tool_menu_delegate.ExecuteIfBound(MenuBuilder);
+		}
 	}
 	MenuBuilder.EndSection();
 }

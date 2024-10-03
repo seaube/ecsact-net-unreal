@@ -16,6 +16,7 @@
 #include "Misc/Base64.h"
 #include "HAL/FileManager.h"
 #include "Misc/FileHelper.h"
+#include "EcsactNetEditor/EcsactNetEditor.h"
 #include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "Framework/MultiBox/MultiBoxExtender.h"
 #include "EcsactNetWasmUpload.h"
@@ -55,33 +56,22 @@ auto FEcsactNetWasmModule::StartupModule() -> void {
 		&FEcsactNetWasmModule::OnSettingsModified
 	);
 
-	auto& level_editor_module =
-		FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
-	TSharedPtr<FExtender> menu_extender = MakeShareable(new FExtender());
-	menu_extender->AddMenuExtension(
-		"Tools",
-		EExtensionHook::After,
-		nullptr,
+	auto& ecsact_net_editor = FEcsactNetEditorModule::Get();
+
+	ecsact_net_editor.AddEcsactNetToolsMenuExtension(
 		FMenuExtensionDelegate::CreateRaw(this, &FEcsactNetWasmModule::AddMenuEntry)
 	);
-
-	level_editor_module.GetMenuExtensibilityManager()->AddExtender(menu_extender);
 }
 
-auto FEcsactNetWasmModule::AddMenuEntry(FMenuBuilder& MenuBuilder) -> void {
-	MenuBuilder.BeginSection(
-		"EcsactNetTools",
-		LOCTEXT("EcsactNetToolsSectionTitle", "Ecsact Net")
+auto FEcsactNetWasmModule::AddMenuEntry( //
+	class FMenuBuilder& MenuBuilder
+) -> void {
+	MenuBuilder.AddMenuEntry(
+		LOCTEXT("EcsactNetUploadWasm", "Upload System Impls"),
+		LOCTEXT("EcsactNetUploadWasm", "Manually trigger a wasm system upload"),
+		FSlateIcon(),
+		FUIAction(FExecuteAction::CreateLambda([this] { UploadSystemImpls(); }))
 	);
-	{
-		MenuBuilder.AddMenuEntry(
-			LOCTEXT("EcsactNetUploadWasm", "Upload System Impls"),
-			LOCTEXT("EcsactNetUploadWasm", "Manually trigger a wasm system upload"),
-			FSlateIcon(),
-			FUIAction(FExecuteAction::CreateLambda([this] { UploadSystemImpls(); }))
-		);
-	}
-	MenuBuilder.EndSection();
 }
 
 auto FEcsactNetWasmModule::ShutdownModule() -> void {

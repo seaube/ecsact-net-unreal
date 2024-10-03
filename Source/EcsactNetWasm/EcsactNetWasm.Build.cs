@@ -27,6 +27,7 @@ public class EcsactNetWasm : ModuleRules {
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {
+			"EcsactNetEditor",
 			"EcsactEditor",
 		});
 
