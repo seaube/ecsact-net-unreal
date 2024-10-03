@@ -1,13 +1,18 @@
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
+#include "HttpResultCallback.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(EcsactNetEditor, Log, All);
 
 class FEcsactNetEditorModule : public IModuleInterface {
-	class UEcsactNetHttpClient*          HttpClient;
+	class UEcsactNetHttpClient* HttpClient;
 
 	auto OnSettingsModified() -> bool;
 	auto AddMenuEntry(class FMenuBuilder&) -> void;
+	auto ReceivedAuthCallback(
+		const struct FHttpServerRequest& Request,
+		const FHttpResultCallback&       OnComplete
+	) -> bool;
 
 public:
 	FEcsactNetEditorModule();

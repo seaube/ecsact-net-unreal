@@ -18,8 +18,10 @@ public class EcsactNetEditor : ModuleRules {
 			"Settings",
 			"PropertyEditor",
 			"Http",
+			"HttpServer",
 			"Json",
 			"JsonUtilities",
+			"Sockets",
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {
