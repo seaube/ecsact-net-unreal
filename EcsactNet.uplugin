@@ -22,6 +22,11 @@
 			"LoadingPhase": "Default"
 		},
 		{
+			"Name": "EcsactNetEditor",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		},
+		{
 			"Name": "EcsactNetWasm",
 			"Type": "Editor",
 			"LoadingPhase": "Default"
