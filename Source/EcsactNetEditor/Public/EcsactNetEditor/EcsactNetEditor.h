@@ -4,7 +4,6 @@
 DECLARE_LOG_CATEGORY_EXTERN(EcsactNetEditor, Log, All);
 
 class FEcsactNetEditorModule : public IModuleInterface {
-	static class FEcsactNetEditorModule* Self;
 	class UEcsactNetHttpClient*          HttpClient;
 
 	auto OnSettingsModified() -> bool;

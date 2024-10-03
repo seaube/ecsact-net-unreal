@@ -23,17 +23,11 @@
 
 #define LOCTEXT_NAMESPACE "FEcsactNetEditorModule"
 
-FEcsactNetEditorModule* FEcsactNetEditorModule::Self = nullptr;
-
 FEcsactNetEditorModule::FEcsactNetEditorModule() {
-	Self = this;
 	HttpClient = nullptr;
 }
 
 FEcsactNetEditorModule::~FEcsactNetEditorModule() {
-	if(Self == this) {
-		Self = nullptr;
-	}
 }
 
 auto FEcsactNetEditorModule::StartupModule() -> void {
@@ -51,8 +45,7 @@ auto FEcsactNetEditorModule::OnSettingsModified() -> bool {
 }
 
 auto FEcsactNetEditorModule::Get() -> FEcsactNetEditorModule& {
-	check(Self != nullptr);
-	return *Self;
+	return FModuleManager::Get().GetModuleChecked<FEcsactNetEditorModule>("EcsactNetEditor");
 }
 
 auto FEcsactNetEditorModule::Login() -> void {
