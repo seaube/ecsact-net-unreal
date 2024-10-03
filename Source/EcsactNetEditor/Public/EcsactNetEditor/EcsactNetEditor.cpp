@@ -116,6 +116,15 @@ auto FEcsactNetEditorModule::AddMenuEntry(FMenuBuilder& MenuBuilder) -> void {
 	MenuBuilder.EndSection();
 }
 
+auto FEcsactNetEditorModule::GetHttpClient() -> UEcsactNetHttpClient* {
+	return HttpClient;
+}
+
+auto FEcsactNetEditorModule::GetHttpClient() const
+	-> const UEcsactNetHttpClient* {
+	return HttpClient;
+}
+
 auto FEcsactNetEditorModule::ShutdownModule() -> void {
 }
 

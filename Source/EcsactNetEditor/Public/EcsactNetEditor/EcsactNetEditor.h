@@ -34,6 +34,14 @@ public:
 	static auto Get() -> FEcsactNetEditorModule&;
 
 	/**
+	 * Http client for communicating with the ecsact net server.
+	 *
+	 * NOTE: only to be used internally.
+	 */
+	auto GetHttpClient() -> class UEcsactNetHttpClient*;
+	auto GetHttpClient() const -> const class UEcsactNetHttpClient*;
+
+	/**
 	 * Start authentication process after which @ref GetAuthToken returns a valid
 	 * authenticated token.
 	 */
