@@ -1,4 +1,5 @@
 #include "EcsactNetEditor.h"
+#include "Framework/Commands/UIAction.h"
 #include "HAL/PlatformFileManager.h"
 #include "UObject/NoExportTypes.h"
 #include "ISettingsModule.h"
@@ -24,6 +25,7 @@
 #include "Sockets.h"
 #include "SocketSubsystem.h"
 #include "EcsactNetHttpClient.h"
+#include "EcsactNetSettings.h"
 
 #define LOCTEXT_NAMESPACE "FEcsactNetEditorModule"
 
@@ -53,9 +55,40 @@ FEcsactNetEditorModule::~FEcsactNetEditorModule() {
 
 auto FEcsactNetEditorModule::StartupModule() -> void {
 	HttpClient = NewObject<UEcsactNetHttpClient>();
+
+	auto& level_editor_module =
+		FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
+	TSharedPtr<FExtender> menu_extender = MakeShareable(new FExtender());
+	menu_extender->AddMenuExtension(
+		"Tools",
+		EExtensionHook::After,
+		nullptr,
+		FMenuExtensionDelegate::CreateRaw(
+			this,
+			&FEcsactNetEditorModule::AddMenuEntry
+		)
+	);
+
+	level_editor_module.GetMenuExtensibilityManager()->AddExtender(menu_extender);
 }
 
 auto FEcsactNetEditorModule::AddMenuEntry(FMenuBuilder& MenuBuilder) -> void {
+	MenuBuilder.BeginSection(
+		"EcsactNetTools",
+		LOCTEXT("EcsactNetToolsSectionTitle", "Ecsact Net")
+	);
+	{
+		MenuBuilder.AddMenuEntry(
+			LOCTEXT("EcsactNetUploadEcsact", "Upload Ecsact Files"),
+			LOCTEXT(
+				"EcsactNetUploadEcsact",
+				"Manually re-upload Eccsact Files and run a node build"
+			),
+			FSlateIcon(),
+			FUIAction(FExecuteAction::CreateLambda([this] { ReplaceEcsactFiles(); }))
+		);
+	}
+	MenuBuilder.EndSection();
 }
 
 auto FEcsactNetEditorModule::ShutdownModule() -> void {
@@ -134,6 +167,10 @@ auto FEcsactNetEditorModule::GetAuthToken() -> FString {
 	}
 
 	return auth_json.id_token;
+}
+
+auto FEcsactNetEditorModule::ReplaceEcsactFiles() -> void {
+	const auto& settings = GetDefault<UEcsactNetSettings>();
 }
 
 IMPLEMENT_MODULE(FEcsactNetEditorModule, EcsactNet)

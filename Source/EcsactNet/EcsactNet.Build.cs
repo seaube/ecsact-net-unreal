@@ -6,13 +6,11 @@ public class EcsactNet : ModuleRules {
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
 		PublicDependencyModuleNames.AddRange(new string[] {
+			"CoreUObject",
 			"Core",
-			"Ecsact",
-			"EcsactEditor",
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {
-			"CoreUObject",
 			"Engine",
 		});
 	}

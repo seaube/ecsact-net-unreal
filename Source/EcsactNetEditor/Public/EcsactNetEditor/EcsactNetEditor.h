@@ -37,4 +37,6 @@ public:
 	 * returned. Does not guarantee the token is not expired.
 	 */
 	auto GetAuthToken() -> FString;
+
+	auto ReplaceEcsactFiles() -> void;
 };

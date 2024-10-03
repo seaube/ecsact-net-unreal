@@ -5,7 +5,7 @@
 
 UCLASS(Config = EcsactNet, DefaultConfig)
 
-class UEcsactNetSettings : public UObject {
+class ECSACTNETEDITOR_API UEcsactNetSettings : public UObject {
 	GENERATED_BODY() // NOLINT
 public:
 	UEcsactNetSettings();
