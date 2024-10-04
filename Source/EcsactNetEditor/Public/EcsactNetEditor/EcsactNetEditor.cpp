@@ -1,6 +1,7 @@
 #include "EcsactNetEditor.h"
 #include "Framework/Commands/UIAction.h"
 #include "HAL/PlatformFileManager.h"
+#include "HttpServerRequest.h"
 #include "UObject/NoExportTypes.h"
 #include "ISettingsModule.h"
 #include "ISettingsSection.h"
@@ -98,6 +99,12 @@ auto FEcsactNetEditorModule::AddMenuEntry(FMenuBuilder& MenuBuilder) -> void {
 	);
 	{
 		MenuBuilder.AddMenuEntry(
+			LOCTEXT("Login", "Login"),
+			LOCTEXT("Login", "Login"),
+			FSlateIcon(),
+			FUIAction(FExecuteAction::CreateLambda([this] { Login(); }))
+		);
+		MenuBuilder.AddMenuEntry(
 			LOCTEXT("EcsactNetUploadEcsact", "Upload Ecsact Files"),
 			LOCTEXT(
 				"EcsactNetUploadEcsact",
@@ -147,29 +154,57 @@ auto FEcsactNetEditorModule::ReceivedAuthCallback(
 }
 
 auto FEcsactNetEditorModule::Login() -> void {
+	auto  unused_port = GetUnusedPort();
 	auto& http_module = FHttpModule::Get();
 	auto& http_server_module = FHttpServerModule::Get();
-	auto  router = http_server_module.GetHttpRouter(0);
+	auto  router = http_server_module.GetHttpRouter(unused_port);
+	check(router);
+	check(router.Get());
 
-	auto handler = FHttpRequestHandler{};
-	handler.BindRaw(this, &FEcsactNetEditorModule::ReceivedAuthCallback);
-	router.Get()->BindRoute( //
-		FHttpPath{"/"},
-		EHttpServerRequestVerbs::VERB_POST,
-		handler
-	);
+	router.Get()->RegisterRequestPreprocessor(FHttpRequestHandler::CreateLambda(
+		[](const FHttpServerRequest& Request, const FHttpResultCallback& OnComplete)
+			-> bool {
+			auto res = MakeUnique<FHttpServerResponse>();
+			res->Headers.Add("Access-Control-Allow-Origin", {"*"});
+			res->Code = EHttpServerResponseCodes::Ok;
+			if(Request.Verb == EHttpServerRequestVerbs::VERB_OPTIONS) {
+				res->Headers.Add(
+					"Access-Control-Allow-Headers",
+					{"Content-Type, Accept, X-Requested-With"}
+				);
+				res->Headers.Add("Access-Control-Allow-Methods", {"POST"});
+			} else if(Request.Verb == EHttpServerRequestVerbs::VERB_POST) {
+			}
+			UE_LOG(
+				LogTemp,
+				Warning,
+				TEXT("Request: %s"),
+				*Request.RelativePath.GetPath()
+			);
+			OnComplete(std::move(res));
+			return true;
+		}
+	));
+
+	// router.Get()->BindRoute( //
+	// 	FHttpPath{"/*"},
+	// 	EHttpServerRequestVerbs::VERB_POST,
+	// 	FHttpRequestHandler::CreateRaw(
+	// 		this,
+	// 		&FEcsactNetEditorModule::ReceivedAuthCallback
+	// 	)
+	// );
 
 	http_server_module.StartAllListeners();
 
-	auto unused_port = GetUnusedPort();
 	UE_LOG(LogTemp, Warning, TEXT("Using port: %i"), unused_port);
 	auto err = FString{};
-	auto params = FString::Format(
-		TEXT("?p={0}&integration=unreal"),
+	auto url = FString::Format(
+		TEXT("https://seaube.com/auth?p={0}&integration=unreal"),
 		FStringFormatOrderedArguments{unused_port}
 	);
-	FPlatformProcess::LaunchURL(TEXT("https://seaube.com/auth"), *params, &err);
-	if(err.IsEmpty()) {
+	FPlatformProcess::LaunchURL(*url, TEXT(""), &err);
+	if(!err.IsEmpty()) {
 		UE_LOG(LogTemp, Error, TEXT("Failed to launch auth url: %s"), *err);
 		return;
 	}
