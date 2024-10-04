@@ -48,7 +48,7 @@ class ECSACTNETEDITOR_API UEcsactNetHttpClient : public UObject {
 	 * Creates a request suitable for the ecsact net server. Project ID and token
 	 * are already set.
 	 */
-	auto CreateRequest( //
+	[[nodiscard]] auto CreateRequest( //
 		FString Endpoint
 	) -> TSharedRef<IHttpRequest, ESPMode::ThreadSafe>;
 
