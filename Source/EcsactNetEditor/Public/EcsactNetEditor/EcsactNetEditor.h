@@ -4,6 +4,8 @@
 #include "Framework/MultiBox/MultiBoxExtender.h"
 #include "Modules/ModuleManager.h"
 #include "HttpResultCallback.h"
+#include "HttpServerResponse.h"
+#include "HttpServerRequest.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(EcsactNetEditor, Log, All);
 
@@ -15,9 +17,9 @@ class ECSACTNETEDITOR_API FEcsactNetEditorModule : public IModuleInterface {
 	auto OnSettingsModified() -> bool;
 	auto AddMenuEntry(class FMenuBuilder&) -> void;
 	auto ReceivedAuthCallback(
-		const struct FHttpServerRequest& Request,
-		const FHttpResultCallback&       OnComplete
-	) -> bool;
+		const FHttpServerRequest& Request,
+		FHttpServerResponse&      Response
+	) -> void;
 
 public:
 	FEcsactNetEditorModule();

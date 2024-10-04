@@ -10,7 +10,40 @@ struct FEcsactNetAuthJson {
 	GENERATED_BODY()
 
 	UPROPERTY()
+	FString display_name;
+
+	UPROPERTY()
+	FString email;
+
+	UPROPERTY()
+	FString photo_url;
+
+	UPROPERTY()
 	FString id_token;
+
+	UPROPERTY()
+	FString refresh_token;
+};
+
+USTRUCT()
+
+struct FEcsactLoginAuthPayload {
+	GENERATED_BODY()
+
+	UPROPERTY()
+	FString displayName;
+
+	UPROPERTY()
+	FString email;
+
+	UPROPERTY()
+	FString photoURL;
+
+	UPROPERTY()
+	FString idToken;
+
+	UPROPERTY()
+	FString refreshToken;
 };
 
 USTRUCT()

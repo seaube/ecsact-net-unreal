@@ -2,6 +2,7 @@
 #include "Dom/JsonValue.h"
 #include "EcsactNetEditor/EcsactNetEditorUtil.h"
 #include "EcsactUnreal/Ecsact.h"
+#include "Containers/StringConv.h"
 #include "Framework/Commands/UIAction.h"
 #include "HAL/PlatformFileManager.h"
 #include "HttpServerRequest.h"
@@ -35,6 +36,8 @@
 #include "EcsactNetEditorPayloads.h"
 
 #define LOCTEXT_NAMESPACE "FEcsactNetEditorModule"
+
+DEFINE_LOG_CATEGORY(EcsactNetEditor);
 
 static auto GetUnusedPort() -> int32 {
 	auto* socket_ss = ISocketSubsystem::Get();
@@ -154,11 +157,62 @@ auto FEcsactNetEditorModule::Get() -> FEcsactNetEditorModule& {
 }
 
 auto FEcsactNetEditorModule::ReceivedAuthCallback(
-	const FHttpServerRequest&  Request,
-	const FHttpResultCallback& OnComplete
-) -> bool {
-	UE_LOG(LogTemp, Warning, TEXT("Received Auth Callback"));
-	return false;
+	const FHttpServerRequest& Request,
+	FHttpServerResponse&      Response
+) -> void {
+	auto payload = FEcsactLoginAuthPayload{};
+	auto payload_json_str = FString{StringCast<TCHAR>(
+		reinterpret_cast<const char*>(Request.Body.GetData()),
+		Request.Body.Num()
+	)};
+	auto success =
+		FJsonObjectConverter::JsonObjectStringToUStruct(payload_json_str, &payload);
+	if(!success) {
+		Response.Code = EHttpServerResponseCodes::ServerError;
+		UE_LOG(EcsactNetEditor, Error, TEXT("Received bad login payload"));
+		return;
+	}
+
+	auto auth_json = FEcsactNetAuthJson{};
+	auth_json.id_token = payload.idToken;
+	auth_json.refresh_token = payload.refreshToken;
+	auth_json.email = payload.email;
+	auth_json.display_name = payload.displayName;
+	auth_json.photo_url = payload.photoURL;
+
+	auto auth_json_str = FString{};
+	auto serialize_success =
+		FJsonObjectConverter::UStructToJsonObjectString(auth_json, auth_json_str);
+
+	if(!serialize_success) {
+		Response.Code = EHttpServerResponseCodes::ServerError;
+		UE_LOG(EcsactNetEditor, Error, TEXT("Failed to serialize auth json"));
+		return;
+	}
+
+	auto auth_json_path = FPaths::Combine(
+		FPlatformProcess::UserDir(),
+		".config",
+		"ecsact-net",
+		"auth.json"
+	);
+
+	auto write_auth_json_success =
+		FFileHelper::SaveStringToFile(auth_json_str, *auth_json_path);
+	if(!write_auth_json_success) {
+		Response.Code = EHttpServerResponseCodes::ServerError;
+		UE_LOG(EcsactNetEditor, Error, TEXT("Failed to write auth json"));
+		return;
+	}
+
+	UE_LOG(EcsactNetEditor, Log, TEXT("Updated %s"), *auth_json_path);
+	UE_LOG(
+		EcsactNetEditor,
+		Log,
+		TEXT("Successfully logged in as %s (%s)"),
+		*payload.displayName,
+		*payload.email
+	);
 }
 
 auto FEcsactNetEditorModule::Login() -> void {
@@ -170,8 +224,10 @@ auto FEcsactNetEditorModule::Login() -> void {
 	check(router.Get());
 
 	router.Get()->RegisterRequestPreprocessor(FHttpRequestHandler::CreateLambda(
-		[](const FHttpServerRequest& Request, const FHttpResultCallback& OnComplete)
-			-> bool {
+		[this](
+			const FHttpServerRequest&  Request,
+			const FHttpResultCallback& OnComplete
+		) -> bool {
 			auto res = MakeUnique<FHttpServerResponse>();
 			res->Headers.Add("Access-Control-Allow-Origin", {"*"});
 			res->Code = EHttpServerResponseCodes::Ok;
@@ -182,26 +238,12 @@ auto FEcsactNetEditorModule::Login() -> void {
 				);
 				res->Headers.Add("Access-Control-Allow-Methods", {"POST"});
 			} else if(Request.Verb == EHttpServerRequestVerbs::VERB_POST) {
+				ReceivedAuthCallback(Request, *res);
 			}
-			UE_LOG(
-				LogTemp,
-				Warning,
-				TEXT("Request: %s"),
-				*Request.RelativePath.GetPath()
-			);
 			OnComplete(std::move(res));
 			return true;
 		}
 	));
-
-	// router.Get()->BindRoute( //
-	// 	FHttpPath{"/*"},
-	// 	EHttpServerRequestVerbs::VERB_POST,
-	// 	FHttpRequestHandler::CreateRaw(
-	// 		this,
-	// 		&FEcsactNetEditorModule::ReceivedAuthCallback
-	// 	)
-	// );
 
 	http_server_module.StartAllListeners();
 
@@ -220,7 +262,7 @@ auto FEcsactNetEditorModule::Login() -> void {
 
 auto FEcsactNetEditorModule::GetAuthToken() -> FString {
 	auto auth_json_path = FPaths::Combine(
-		FPlatformProcess::UserHomeDir(),
+		FPlatformProcess::UserDir(),
 		".config",
 		"ecsact-net",
 		"auth.json"
