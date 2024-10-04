@@ -67,4 +67,6 @@ public:
 		TArray<FSystemImplsReplaceRequest> Requests,
 		FOnUploadSystemImplsDone           OnDone
 	) -> void;
+
+	auto ReplaceEcsactFiles() -> void;
 };

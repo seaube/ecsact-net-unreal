@@ -117,7 +117,9 @@ auto FEcsactNetEditorModule::AddMenuEntry(FMenuBuilder& MenuBuilder) -> void {
 				"Manually re-upload Eccsact Files and run a node build"
 			),
 			FSlateIcon(),
-			FUIAction(FExecuteAction::CreateLambda([this] { ReplaceEcsactFiles(); }))
+			FUIAction(FExecuteAction::CreateLambda([this] {
+				HttpClient->ReplaceEcsactFiles();
+			}))
 		);
 
 		// These delegates are from other modules that want to put menu items in the
@@ -242,75 +244,6 @@ auto FEcsactNetEditorModule::GetAuthToken() -> FString {
 	}
 
 	return auth_json.id_token;
-}
-
-auto FEcsactNetEditorModule::ReplaceEcsactFiles() -> void {
-	const auto& settings = GetDefault<UEcsactNetSettings>();
-
-	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> http_request =
-		FHttpModule::Get().CreateRequest();
-
-	// TODO: make this api url configurable
-	http_request->SetURL("http://172.23.68.63:51051/v1/project/ecsact/replace");
-
-	http_request->SetVerb("POST");
-	UE_LOG(
-		LogTemp,
-		Log,
-		TEXT("ReplaceEcasctRequest with Project id %s"),
-		*settings->project_id
-	);
-	http_request->SetHeader("project_id", settings->project_id);
-
-	auto ecsact_files = FEcsactEditorModule::GetAllEcsactFiles();
-
-	UE_LOG(LogTemp, Log, TEXT("Sending %i ecsact files"), ecsact_files.Num());
-
-	auto ecsact_files_json = EcsactNetEditorUtil::TArrayToJson(ecsact_files);
-
-	UE_LOG(LogTemp, Log, TEXT("JSON %s"), *ecsact_files_json);
-
-	http_request->SetContentAsString(ecsact_files_json);
-
-	http_request->OnProcessRequestComplete().BindLambda( //
-		[](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess) {
-			if(bSuccess && Response.IsValid()) {
-				auto res_str = Response->GetContentAsString();
-				auto res_data = TArray<FEcsactReplaceResponse>{};
-
-				auto success = FJsonObjectConverter::JsonArrayStringToUStruct(
-					res_str,
-					&res_data,
-					0,
-					false
-				);
-
-				if(!success) {
-					UE_LOG(
-						LogTemp,
-						Error,
-						TEXT("Failed to parse response: %s"),
-						*res_str
-					);
-					return;
-				}
-
-				for(auto item : res_data) {
-					if(item.result) {
-						UE_LOG(LogTemp, Log, TEXT("Successfully replaced Ecsact file!"));
-						UE_LOG(
-							LogTemp,
-							Log,
-							TEXT("NODE BUILD ID: %s"),
-							*item.node_build_id
-						);
-					}
-				}
-			}
-		}
-	);
-
-	http_request->ProcessRequest();
 }
 
 IMPLEMENT_MODULE(FEcsactNetEditorModule, EcsactNet)

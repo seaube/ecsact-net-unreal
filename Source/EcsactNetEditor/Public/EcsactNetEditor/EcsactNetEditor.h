@@ -1,3 +1,5 @@
+#pragma once
+
 #include "CoreMinimal.h"
 #include "Framework/MultiBox/MultiBoxExtender.h"
 #include "Modules/ModuleManager.h"
@@ -52,6 +54,4 @@ public:
 	 * returned. Does not guarantee the token is not expired.
 	 */
 	auto GetAuthToken() -> FString;
-
-	auto ReplaceEcsactFiles() -> void;
 };

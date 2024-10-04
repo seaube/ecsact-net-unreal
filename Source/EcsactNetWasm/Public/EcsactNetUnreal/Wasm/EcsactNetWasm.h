@@ -1,7 +1,7 @@
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
 
-DECLARE_LOG_CATEGORY_EXTERN(EcsactNet, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(EcsactNetWasm, Log, All);
 
 class FEcsactNetWasmModule : public IModuleInterface {
 	auto OnSettingsModified() -> bool;
