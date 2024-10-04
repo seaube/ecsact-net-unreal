@@ -24,7 +24,6 @@
 #define LOCTEXT_NAMESPACE "FEcsactNetWasmModule"
 
 static auto ReadFileAsBase64(const FString& FilePath) -> FString {
-	// Read file contents into a byte array
 	auto file_contents = TArray<uint8>{};
 	if(!FFileHelper::LoadFileToArray(file_contents, *FilePath)) {
 		UE_LOG(LogTemp, Error, TEXT("Failed to read file: %s"), *FilePath);
@@ -85,10 +84,10 @@ auto FEcsactNetWasmModule::UploadSystemImpls() -> void {
 
 	for(auto wasm_file : settings->SystemImplWasmFiles) {
 		auto req = FSystemImplsReplaceRequest{};
-		req.file_contents_type = "SYSTEM_IMPL_WASM_BASE64";
-		req.file_contents = ReadFileAsBase64(wasm_file.FilePath);
+		req.fileContentsType = "SYSTEM_IMPL_WASM_BASE64";
+		req.fileContents = ReadFileAsBase64(wasm_file.FilePath);
 
-		if(req.file_contents.IsEmpty()) {
+		if(req.fileContents.IsEmpty()) {
 			return;
 		}
 
@@ -99,18 +98,18 @@ auto FEcsactNetWasmModule::UploadSystemImpls() -> void {
 			return;
 		}
 
-		requests.Add(std::move(req));
+		requests.Add(req);
 	}
 
 	client->UploadSystemImpls(
-		requests,
+		std::move(requests),
 		UEcsactNetHttpClient::FOnUploadSystemImplsDone::CreateLambda(
 			[](auto response) {
 				for(auto item : response) {
 					if(item.status == "OK") {
 						UE_LOG(LogTemp, Log, TEXT("Successfully uploaded wasm!"));
 						UE_LOG(LogTemp, Log, TEXT("Uploaded System Names:"));
-						for(auto name : item.system_names) {
+						for(auto name : item.systemNames) {
 							UE_LOG(LogTemp, Log, TEXT("    - %s"), *name);
 						}
 					} else {

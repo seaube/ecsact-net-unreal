@@ -52,10 +52,10 @@ struct FSystemImplsReplaceRequest {
 	GENERATED_BODY()
 
 	UPROPERTY()
-	FString file_contents_type;
+	FString fileContentsType;
 
 	UPROPERTY()
-	FString file_contents;
+	FString fileContents;
 };
 
 USTRUCT()
@@ -67,7 +67,7 @@ struct FSystemImplsReplaceResponse {
 	FString status;
 
 	UPROPERTY()
-	TArray<FString> system_names;
+	TArray<FString> systemNames;
 };
 
 UCLASS()
