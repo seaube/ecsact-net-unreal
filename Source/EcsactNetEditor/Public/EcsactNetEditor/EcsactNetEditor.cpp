@@ -65,6 +65,7 @@ FEcsactNetEditorModule::~FEcsactNetEditorModule() {
 
 auto FEcsactNetEditorModule::StartupModule() -> void {
 	HttpClient = NewObject<UEcsactNetHttpClient>();
+	HttpClient->SetAuthToken(GetAuthToken());
 
 	auto& settings_module =
 		FModuleManager::GetModuleChecked<ISettingsModule>("Settings");
@@ -213,6 +214,8 @@ auto FEcsactNetEditorModule::ReceivedAuthCallback(
 		*payload.displayName,
 		*payload.email
 	);
+
+	HttpClient->SetAuthToken(payload.idToken);
 }
 
 auto FEcsactNetEditorModule::Login() -> void {
