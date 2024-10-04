@@ -72,7 +72,7 @@ auto UEcsactNetHttpClient::UploadSystemImpls( //
 	TArray<FSystemImplsReplaceRequest> Requests,
 	FOnUploadSystemImplsDone           OnDone
 ) -> void {
-	auto http_request = CreateRequest("/v1/project/ecsact/replace");
+	auto http_request = CreateRequest("/v1/project/system-impls/replace");
 	http_request->SetVerb("POST");
 	http_request->SetContentAsString(UStructArrayToJsonArray(Requests));
 	http_request->OnProcessRequestComplete().BindLambda(
