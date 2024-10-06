@@ -1,4 +1,5 @@
 #include "EcsactNetHttpClient.h"
+#include "EcsactNetEditor/EcsactNetEditorUtil.h"
 #include "Interfaces/IHttpRequest.h"
 #include "Interfaces/IHttpResponse.h"
 #include "Dom/JsonObject.h"
@@ -6,9 +7,11 @@
 #include "Serialization/Archive.h"
 #include "Serialization/JsonSerializer.h"
 #include "JsonObjectConverter.h"
+#include "JsonWebToken.h"
 #include "Misc/Base64.h"
 #include "EcsactNetEditor/EcsactNetSettings.h"
 #include "EcsactNetEditorPayloads.h"
+#include "EcsactEditor.h"
 #include "EcsactNetEditor.h"
 
 auto UEcsactNetHttpClient::CreateRequest( //
@@ -35,9 +38,6 @@ auto UEcsactNetHttpClient::CreateRequest( //
 	req->SetURL(endpoint_prefix + Endpoint);
 	if(!settings->ProjectID.IsEmpty()) {
 		req->SetHeader("project_id", settings->ProjectID);
-	}
-	if(!AuthToken.IsEmpty()) {
-		req->SetHeader("ecsact-net-token", AuthToken);
 	}
 
 	return req;
@@ -68,19 +68,112 @@ static auto UStructArrayToJsonArray(const TArray<T> Array) -> FString {
 	return req_json_stream;
 }
 
+auto UEcsactNetHttpClient::GetAuthTokenAsync( //
+	TDelegate<void(FString)> Callback
+) -> void {
+	auto auth_json = GetAuthJson();
+	if(!auth_json) {
+		UE_LOG(LogTemp, Error, TEXT("No auth json available"));
+		return;
+	}
+
+	auto web_token = FJsonWebToken::FromString(auth_json->id_token);
+	if(!web_token) {
+		UE_LOG(LogTemp, Error, TEXT("Invalid web token"));
+		return;
+	}
+
+	if(web_token->HasExpired()) {
+		RefreshIdToken(
+			auth_json->refresh_token,
+			TDelegate<void(FEcsactRefreshTokenResponse)>::CreateLambda(
+				[Callback = std::move(Callback)]( //
+					FEcsactRefreshTokenResponse Res
+				) -> void { Callback.ExecuteIfBound(Res.id_token); }
+			)
+		);
+	} else {
+		Callback.ExecuteIfBound(auth_json->id_token);
+	}
+}
+
+auto UEcsactNetHttpClient::GetAuthJson() -> TOptional<FEcsactNetAuthJson> {
+	auto auth_json_path = EcsactNetEditorUtil::GetAuthJsonPath();
+	auto auth_json_str = FString{};
+
+	if(!FFileHelper::LoadFileToString(auth_json_str, *auth_json_path)) {
+		return {};
+	}
+
+	auto auth_json = FEcsactNetAuthJson{};
+	auto success = FJsonObjectConverter::JsonObjectStringToUStruct( //
+		auth_json_str,
+		&auth_json
+	);
+
+	if(!success) {
+		UE_LOG(LogTemp, Error, TEXT("Failed to deserialize auth json"));
+		return {};
+	}
+
+	if(auth_json.id_token.IsEmpty()) {
+		UE_LOG(LogTemp, Warning, TEXT("id_token is empty: %s"), *auth_json_str);
+		return {};
+	}
+	if(auth_json.refresh_token.IsEmpty()) {
+		UE_LOG(LogTemp, Warning, TEXT("refresh_token is empty"));
+		return {};
+	}
+
+	return auth_json;
+}
+
+auto UEcsactNetHttpClient::RefreshIdToken(
+	FString                                      RefreshToken,
+	TDelegate<void(FEcsactRefreshTokenResponse)> OnDone
+) -> void {
+	constexpr auto api_key = "AIzaSyBKeB1T-abSePIotAnvIKATvInXTfi8UVM";
+	constexpr auto hostname = "securetoken.googleapis.com";
+
+	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> req =
+		FHttpModule::Get().CreateRequest();
+
+	req->SetURL(FString::Format( //
+		TEXT("https://{}/v1/token?key={}"),
+		FStringFormatOrderedArguments{hostname, api_key}
+	));
+	req->SetHeader("Content-Type", "application/x-www-form-urlencoded");
+	req->SetContentAsString(FString::Format( //
+		TEXT("grant_type=refresh_token&refresh_token={}"),
+		FStringFormatOrderedArguments{RefreshToken}
+	));
+
+	req->OnProcessRequestComplete().BindLambda( //
+		[OnDone = std::move(OnDone)](
+			FHttpRequestPtr  Request,
+			FHttpResponsePtr Response,
+			bool             ConnectedSuccessfully
+		) -> void {
+			auto payload = FEcsactRefreshTokenResponse{};
+			auto success = FJsonObjectConverter::JsonObjectStringToUStruct(
+				Response->GetContentAsString(),
+				&payload
+			);
+			if(!success) {
+				UE_LOG(LogTemp, Error, TEXT("TODO: handle this error"));
+				return;
+			}
+			OnDone.ExecuteIfBound(payload);
+		}
+	);
+
+	req->ProcessRequest();
+}
+
 auto UEcsactNetHttpClient::UploadSystemImpls( //
 	TArray<FSystemImplsReplaceRequest> Requests,
 	FOnUploadSystemImplsDone           OnDone
 ) -> void {
-	for(auto req : Requests) {
-		UE_LOG(
-			LogTemp,
-			Log,
-			TEXT("File Content Length: %i"),
-			req.fileContents.Len()
-		);
-	}
-
 	auto http_request = CreateRequest("/v1/project/system-impls/replace");
 	http_request->SetVerb("POST");
 	http_request->SetContentAsString(UStructArrayToJsonArray(Requests));
@@ -125,14 +218,18 @@ auto UEcsactNetHttpClient::UploadSystemImpls( //
 		}
 	);
 
-	http_request->ProcessRequest();
+	GetAuthTokenAsync(TDelegate<void(FString)>::CreateLambda(
+		[this, http_request = std::move(http_request)](FString AuthToken) -> void {
+			http_request->SetHeader("ecsact-net-token", AuthToken);
+			http_request->ProcessRequest();
+		}
+	));
 }
 
-auto UEcsactNetHttpClient::ReplaceEcsactFiles() -> void {
+auto UEcsactNetHttpClient::ReplaceEcsactFiles( //
+	TDelegate<void()> OnDone
+) -> void {
 	auto settings = GetDefault<UEcsactNetSettings>();
-
-	// TODO: make this api url configurable
-
 	auto http_request = CreateRequest("/v1/project/ecsact/replace");
 
 	http_request->SetVerb("POST");
@@ -168,7 +265,7 @@ auto UEcsactNetHttpClient::ReplaceEcsactFiles() -> void {
 	http_request->SetContentAsString(ecsact_files_json);
 
 	http_request->OnProcessRequestComplete().BindLambda( //
-		[](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess) {
+		[OnDone = std::move(OnDone)](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess) {
 			if(bSuccess && Response.IsValid()) {
 				auto res_str = Response->GetContentAsString();
 				auto res_data = TArray<FEcsactReplaceResponse>{};
@@ -201,9 +298,16 @@ auto UEcsactNetHttpClient::ReplaceEcsactFiles() -> void {
 						);
 					}
 				}
+
+				OnDone.ExecuteIfBound();
 			}
 		}
 	);
 
-	http_request->ProcessRequest();
+	GetAuthTokenAsync(TDelegate<void(FString)>::CreateLambda(
+		[this, http_request = std::move(http_request)](FString AuthToken) -> void {
+			http_request->SetHeader("ecsact-net-token", AuthToken);
+			http_request->ProcessRequest();
+		}
+	));
 }

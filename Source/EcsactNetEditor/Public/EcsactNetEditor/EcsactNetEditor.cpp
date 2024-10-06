@@ -29,6 +29,7 @@
 #include "Framework/MultiBox/MultiBoxExtender.h"
 #include "Sockets.h"
 #include "SocketSubsystem.h"
+#include "JsonWebToken.h"
 #include "EcsactNetHttpClient.h"
 #include "EcsactNetSettings.h"
 #include "EcsactEditor.h"
@@ -65,7 +66,6 @@ FEcsactNetEditorModule::~FEcsactNetEditorModule() {
 
 auto FEcsactNetEditorModule::StartupModule() -> void {
 	HttpClient = NewObject<UEcsactNetHttpClient>();
-	HttpClient->SetAuthToken(GetAuthToken());
 
 	auto& settings_module =
 		FModuleManager::GetModuleChecked<ISettingsModule>("Settings");
@@ -122,7 +122,7 @@ auto FEcsactNetEditorModule::AddMenuEntry(FMenuBuilder& MenuBuilder) -> void {
 			),
 			FSlateIcon(),
 			FUIAction(FExecuteAction::CreateLambda([this] {
-				HttpClient->ReplaceEcsactFiles();
+				HttpClient->ReplaceEcsactFiles(TDelegate<void()>::CreateLambda([] {}));
 			}))
 		);
 
@@ -191,13 +191,7 @@ auto FEcsactNetEditorModule::ReceivedAuthCallback(
 		return;
 	}
 
-	auto auth_json_path = FPaths::Combine(
-		FPlatformProcess::UserDir(),
-		".config",
-		"ecsact-net",
-		"auth.json"
-	);
-
+	auto auth_json_path = EcsactNetEditorUtil::GetAuthJsonPath();
 	auto write_auth_json_success =
 		FFileHelper::SaveStringToFile(auth_json_str, *auth_json_path);
 	if(!write_auth_json_success) {
@@ -263,32 +257,4 @@ auto FEcsactNetEditorModule::Login() -> void {
 	}
 }
 
-auto FEcsactNetEditorModule::GetAuthToken() -> FString {
-	auto auth_json_path = FPaths::Combine(
-		FPlatformProcess::UserDir(),
-		".config",
-		"ecsact-net",
-		"auth.json"
-	);
-
-	auto auth_json_str = FString{};
-
-	if(!FFileHelper::LoadFileToString(auth_json_str, *auth_json_path)) {
-		return {};
-	}
-
-	auto auth_json = FEcsactNetAuthJson{};
-	auto success = FJsonObjectConverter::UStructToJsonObjectString( //
-		auth_json,
-		auth_json_str
-	);
-
-	if(!success) {
-		UE_LOG(LogTemp, Error, TEXT("Failed to deserialize auth json"));
-		return {};
-	}
-
-	return auth_json.id_token;
-}
-
-IMPLEMENT_MODULE(FEcsactNetEditorModule, EcsactNet)
+IMPLEMENT_MODULE(FEcsactNetEditorModule, EcsactNetEditor)

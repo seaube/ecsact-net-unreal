@@ -31,5 +31,14 @@
 			"Type": "Editor",
 			"LoadingPhase": "Default"
 		}
+	],
+	"Plugins": [
+		{
+			"Name": "JWT",
+			"Enabled": true,
+			"TargetAllowList": [
+				"Editor"
+			]
+		}
 	]
 }

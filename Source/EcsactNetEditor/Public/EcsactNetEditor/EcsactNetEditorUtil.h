@@ -4,5 +4,5 @@
 
 namespace EcsactNetEditorUtil {
 auto TArrayToJson(TArray<FString> strings) -> FString;
-} // namespace EcsactNetEditor::Util
-
+auto GetAuthJsonPath() -> FString;
+} // namespace EcsactNetEditorUtil

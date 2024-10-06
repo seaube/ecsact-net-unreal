@@ -1,6 +1,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Delegates/DelegateCombinations.h"
+#include "EcsactNetEditor/EcsactNetHttpClient.h"
 #include "Framework/MultiBox/MultiBoxExtender.h"
 #include "Modules/ModuleManager.h"
 #include "HttpResultCallback.h"
@@ -8,6 +10,8 @@
 #include "HttpServerRequest.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(EcsactNetEditor, Log, All);
+
+// DECLARE_DELEGATE_OneParam(FEcsactNetHttpClientAuthTokenCallback, FString);
 
 class ECSACTNETEDITOR_API FEcsactNetEditorModule : public IModuleInterface {
 	class UEcsactNetHttpClient*    HttpClient;
@@ -19,6 +23,11 @@ class ECSACTNETEDITOR_API FEcsactNetEditorModule : public IModuleInterface {
 	auto ReceivedAuthCallback(
 		const FHttpServerRequest& Request,
 		FHttpServerResponse&      Response
+	) -> void;
+
+	auto RefreshIdToken( //
+		FString                                      RefreshToken,
+		TDelegate<void(FEcsactRefreshTokenResponse)> OnDone
 	) -> void;
 
 public:
@@ -50,10 +59,4 @@ public:
 	 * authenticated token.
 	 */
 	auto Login() -> void;
-
-	/**
-	 * Get the current auth token. If not authenticated an empty string is
-	 * returned. Does not guarantee the token is not expired.
-	 */
-	auto GetAuthToken() -> FString;
 };

@@ -48,6 +48,21 @@ struct FEcsactLoginAuthPayload {
 
 USTRUCT()
 
+struct FEcsactRefreshTokenResponse {
+	GENERATED_BODY()
+
+	UPROPERTY()
+	FString expires_in;
+
+	UPROPERTY()
+	FString id_token;
+
+	UPROPERTY()
+	FString refresh_token;
+};
+
+USTRUCT()
+
 struct FSystemImplsReplaceRequest {
 	GENERATED_BODY()
 
@@ -85,6 +100,17 @@ class ECSACTNETEDITOR_API UEcsactNetHttpClient : public UObject {
 		FString Endpoint
 	) -> TSharedRef<IHttpRequest, ESPMode::ThreadSafe>;
 
+	auto RefreshIdToken( //
+		FString                                      RefreshToken,
+		TDelegate<void(FEcsactRefreshTokenResponse)> OnDone
+	) -> void;
+
+	auto GetAuthJson() -> TOptional<FEcsactNetAuthJson>;
+
+	auto GetAuthTokenAsync( //
+		TDelegate<void(FString)> Callback
+	) -> void;
+
 public:
 	/**
 	 * Set the auth token that should be used for each request.
@@ -101,5 +127,5 @@ public:
 		FOnUploadSystemImplsDone           OnDone
 	) -> void;
 
-	auto ReplaceEcsactFiles() -> void;
+	auto ReplaceEcsactFiles(TDelegate<void()> OnDone) -> void;
 };
