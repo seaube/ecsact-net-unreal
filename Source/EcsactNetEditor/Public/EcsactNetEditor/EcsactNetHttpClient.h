@@ -135,8 +135,53 @@ struct FNodeListRequest {
 
 USTRUCT()
 
+struct FNodeHost {
+	GENERATED_BODY()
+
+	UPROPERTY()
+	FString hostName;
+
+	UPROPERTY()
+	FString port;
+};
+
+USTRUCT()
+
+struct FNodeBuild {
+	GENERATED_BODY()
+
+	UPROPERTY()
+	FString id;
+
+	UPROPERTY()
+	FString status;
+};
+
+USTRUCT()
+
 struct FNodeInfo {
 	GENERATED_BODY()
+
+	UPROPERTY()
+	FNodeHost nodeHost;
+
+	UPROPERTY()
+	FString status;
+
+	UPROPERTY()
+	FString nodeId;
+
+	/**
+	 * nodeBuildId or nodeBuild is set
+	 */
+	UPROPERTY()
+	FString nodeBuildId;
+
+	/**
+	 * nodeBuildId or nodeBuild is set
+	 */
+	UPROPERTY()
+	FNodeBuild nodeBuild;
 };
 
 UCLASS()

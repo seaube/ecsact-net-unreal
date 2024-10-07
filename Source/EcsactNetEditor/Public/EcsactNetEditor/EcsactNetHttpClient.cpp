@@ -404,4 +404,13 @@ auto UEcsactNetHttpClient::NodeList(
 	FNodeListRequest                   Request,
 	TDelegate<void(TArray<FNodeInfo>)> OnDone
 ) -> void {
+	auto http_request = CreateRequest("/v1/node/list");
+	http_request->SetVerb("POST");
+	PrepareServerStreaming(http_request, Request, OnDone);
+	GetAuthTokenAsync(TDelegate<void(FString)>::CreateLambda(
+		[this, http_request](FString AuthToken) -> void {
+			http_request->SetHeader("ecsact-net-token", AuthToken);
+			http_request->ProcessRequest();
+		}
+	));
 }
