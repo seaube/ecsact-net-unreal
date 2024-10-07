@@ -85,12 +85,64 @@ struct FSystemImplsReplaceResponse {
 	TArray<FString> systemNames;
 };
 
+USTRUCT()
+
+struct FEcsactReplaceRequest {
+	GENERATED_BODY();
+
+	UPROPERTY()
+	FString file_str;
+};
+
+USTRUCT()
+
+struct FEcsactReplaceResponse {
+	GENERATED_BODY();
+
+	UPROPERTY()
+	bool result;
+
+	UPROPERTY()
+	FString node_build_id;
+};
+
+USTRUCT()
+
+struct FNodeAuthRequest {
+	GENERATED_BODY()
+
+	UPROPERTY()
+	FString nodeId;
+
+	UPROPERTY()
+	FString address;
+};
+
+USTRUCT()
+
+struct FNodeAuthResponse {
+	GENERATED_BODY()
+
+	UPROPERTY()
+	FString nodeConnectionUri;
+};
+
+USTRUCT()
+
+struct FNodeListRequest {
+	GENERATED_BODY()
+};
+
+USTRUCT()
+
+struct FNodeInfo {
+	GENERATED_BODY()
+};
+
 UCLASS()
 
 class ECSACTNETEDITOR_API UEcsactNetHttpClient : public UObject {
 	GENERATED_BODY()
-
-	FString AuthToken;
 
 	/**
 	 * Creates a request suitable for the ecsact net server. Project ID and token
@@ -112,20 +164,26 @@ class ECSACTNETEDITOR_API UEcsactNetHttpClient : public UObject {
 	) -> void;
 
 public:
-	/**
-	 * Set the auth token that should be used for each request.
-	 */
-	auto SetAuthToken(FString InAuthToken) -> void;
-
-	DECLARE_DELEGATE_OneParam( // NOLINT
-		FOnUploadSystemImplsDone,
-		TArray<FSystemImplsReplaceResponse>
-	);
-
 	auto UploadSystemImpls( //
-		TArray<FSystemImplsReplaceRequest> Requests,
-		FOnUploadSystemImplsDone           OnDone
+		TArray<FSystemImplsReplaceRequest>                   Requests,
+		TDelegate<void(TArray<FSystemImplsReplaceResponse>)> OnDone
 	) -> void;
 
-	auto ReplaceEcsactFiles(TDelegate<void()> OnDone) -> void;
+	auto ReplaceEcsactFiles(
+		TArray<FEcsactReplaceRequest>           Requests,
+		TDelegate<void(FEcsactReplaceResponse)> OnDone
+	) -> void;
+
+	/**
+	 * Get a node connection URI. Should only be used during development.
+	 */
+	auto NodeAuth(
+		FNodeAuthRequest                   Request,
+		TDelegate<void(FNodeAuthResponse)> OnDone
+	) -> void;
+
+	auto NodeList(
+		FNodeListRequest                   Request,
+		TDelegate<void(TArray<FNodeInfo>)> OnDone
+	) -> void;
 };

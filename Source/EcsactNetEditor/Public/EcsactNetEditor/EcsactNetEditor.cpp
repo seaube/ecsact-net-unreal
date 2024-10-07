@@ -34,7 +34,6 @@
 #include "EcsactNetSettings.h"
 #include "EcsactEditor.h"
 #include "EcsactNetEditorUtil.h"
-#include "EcsactNetEditorPayloads.h"
 
 #define LOCTEXT_NAMESPACE "FEcsactNetEditorModule"
 
@@ -102,6 +101,36 @@ auto FEcsactNetEditorModule::AddEcsactNetToolsMenuExtension(
 	ToolMenuExtensionDelegates.Add(MenuExtensionDelegate);
 }
 
+auto FEcsactNetEditorModule::UploadAllEcsactFiles() -> void {
+	auto ecsact_file_paths = FEcsactEditorModule::GetAllEcsactFiles();
+
+	UE_LOG(
+		LogTemp,
+		Log,
+		TEXT("Sending %i ecsact files"),
+		ecsact_file_paths.Num()
+	);
+
+	auto ecsact_replace_reqs = TArray<FEcsactReplaceRequest>{};
+
+	for(auto ecsact_file_path : ecsact_file_paths) {
+		auto ecsact_contents = FString{};
+
+		FFileHelper::LoadFileToString(ecsact_contents, *ecsact_file_path);
+
+		UE_LOG(LogTemp, Log, TEXT("JSON %s"), *ecsact_contents);
+		ecsact_replace_reqs.Add({.file_str = ecsact_contents});
+	}
+	HttpClient->ReplaceEcsactFiles(
+		ecsact_replace_reqs,
+		TDelegate<void(FEcsactReplaceResponse)>::CreateLambda(
+			[](FEcsactReplaceResponse Response) {
+				UE_LOG(LogTemp, Log, TEXT("Upload ecsact files done"));
+			}
+		)
+	);
+}
+
 auto FEcsactNetEditorModule::AddMenuEntry(FMenuBuilder& MenuBuilder) -> void {
 	MenuBuilder.BeginSection(
 		"EcsactNetTools",
@@ -121,9 +150,8 @@ auto FEcsactNetEditorModule::AddMenuEntry(FMenuBuilder& MenuBuilder) -> void {
 				"Manually re-upload Eccsact Files and run a node build"
 			),
 			FSlateIcon(),
-			FUIAction(FExecuteAction::CreateLambda([this] {
-				HttpClient->ReplaceEcsactFiles(TDelegate<void()>::CreateLambda([] {}));
-			}))
+			FUIAction(FExecuteAction::CreateLambda([this] { UploadAllEcsactFiles(); })
+			)
 		);
 
 		// These delegates are from other modules that want to put menu items in the
@@ -208,8 +236,6 @@ auto FEcsactNetEditorModule::ReceivedAuthCallback(
 		*payload.displayName,
 		*payload.email
 	);
-
-	HttpClient->SetAuthToken(payload.idToken);
 }
 
 auto FEcsactNetEditorModule::Login() -> void {

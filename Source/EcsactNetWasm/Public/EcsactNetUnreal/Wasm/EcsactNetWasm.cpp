@@ -103,10 +103,10 @@ auto FEcsactNetWasmModule::UploadSystemImpls() -> void {
 
 	client->UploadSystemImpls(
 		std::move(requests),
-		UEcsactNetHttpClient::FOnUploadSystemImplsDone::CreateLambda(
+		TDelegate<void(TArray<FSystemImplsReplaceResponse>)>::CreateLambda(
 			[](auto response) {
 				for(auto item : response) {
-					if(item.status == "OK") {
+					if(item.status == "SIS_OK") {
 						UE_LOG(LogTemp, Log, TEXT("Successfully uploaded wasm!"));
 						UE_LOG(LogTemp, Log, TEXT("Uploaded System Names:"));
 						for(auto name : item.systemNames) {

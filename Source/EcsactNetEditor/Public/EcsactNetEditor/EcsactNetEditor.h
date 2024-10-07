@@ -30,6 +30,8 @@ class ECSACTNETEDITOR_API FEcsactNetEditorModule : public IModuleInterface {
 		TDelegate<void(FEcsactRefreshTokenResponse)> OnDone
 	) -> void;
 
+	auto UploadAllEcsactFiles() -> void;
+
 public:
 	FEcsactNetEditorModule();
 	~FEcsactNetEditorModule();
