@@ -145,7 +145,7 @@ auto FEcsactNetEditorModule::AuthorizeAndConnect() -> void {
 
 	HttpClient->NodeAuth(
 		req,
-		TDelegate<void(FNodeAuthResponse)>::CreateLambda(
+		TDelegate<void(FNodeAuthResponse)>::CreateLambda( //
 			[this](FNodeAuthResponse response) {
 				UE_LOG(
 					LogTemp,
@@ -153,11 +153,39 @@ auto FEcsactNetEditorModule::AuthorizeAndConnect() -> void {
 					TEXT("Successful auth, connecting with %s URI"),
 					*response.nodeConnectionUri
 				);
-				auto asyncRunner =
+				auto async_runner =
 					Cast<UEcsactAsyncRunner>(EcsactUnrealExecution::Runner());
 
-				asyncRunner->Connect(
+				if(!async_runner) {
+					UE_LOG(
+						LogTemp,
+						Error,
+						TEXT("Runner is NOT async. Will not connect.")
+					);
+					return;
+				}
+
+				if(async_runner->IsTemplate()) {
+					UE_LOG(
+						LogTemp,
+						Error,
+						TEXT("Runner is a TEMPLATE. Will not connect.")
+					);
+					return;
+				}
+
+				async_runner->Connect(
 					TCHAR_TO_UTF8(*response.nodeConnectionUri),
+					IEcsactAsyncRunnerEvents::FAsyncRequestErrorCallback::CreateLambda(
+						[this](ecsact_async_error err) {
+							UE_LOG(
+								LogTemp,
+								Log,
+								TEXT("Connect error %i"),
+								static_cast<int>(err)
+							);
+						}
+					),
 					IEcsactAsyncRunnerEvents::FAsyncRequestDoneCallback::CreateLambda(
 						[this] { UE_LOG(LogTemp, Log, TEXT("Connection successful")); }
 					)
