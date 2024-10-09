@@ -3,6 +3,7 @@
 #include "EcsactNetEditor/EcsactNetEditorUtil.h"
 #include "EcsactUnreal/Ecsact.h"
 #include "Containers/StringConv.h"
+#include "EcsactUnreal/EcsactAsyncRunnerEvents.h"
 #include "Framework/Commands/UIAction.h"
 #include "HAL/PlatformFileManager.h"
 #include "HttpServerRequest.h"
@@ -34,6 +35,8 @@
 #include "EcsactNetSettings.h"
 #include "EcsactEditor.h"
 #include "EcsactNetEditorUtil.h"
+#include "EcsactUnreal/EcsactExecution.h"
+#include "EcsactUnreal/EcsactAsyncRunner.h"
 
 #define LOCTEXT_NAMESPACE "FEcsactNetEditorModule"
 
@@ -131,6 +134,39 @@ auto FEcsactNetEditorModule::UploadAllEcsactFiles() -> void {
 	);
 }
 
+auto FEcsactNetEditorModule::AuthorizeAndConnect() -> void {
+	const auto* settings = GetDefault<UEcsactNetSettings>();
+
+	const auto NodeId = settings->NodeId;
+
+	auto req = FNodeAuthRequest{.nodeId = NodeId, .address = "0.0.0.0"};
+
+	UE_LOG(LogTemp, Log, TEXT("Attempting auth with node ID %s"), *NodeId);
+
+	HttpClient->NodeAuth(
+		req,
+		TDelegate<void(FNodeAuthResponse)>::CreateLambda(
+			[this](FNodeAuthResponse response) {
+				UE_LOG(
+					LogTemp,
+					Log,
+					TEXT("Successful auth, connecting with %s URI"),
+					*response.nodeConnectionUri
+				);
+				auto asyncRunner =
+					Cast<UEcsactAsyncRunner>(EcsactUnrealExecution::Runner());
+
+				asyncRunner->Connect(
+					TCHAR_TO_UTF8(*response.nodeConnectionUri),
+					IEcsactAsyncRunnerEvents::FAsyncRequestDoneCallback::CreateLambda(
+						[this] { UE_LOG(LogTemp, Log, TEXT("Connection successful")); }
+					)
+				);
+			}
+		)
+	);
+}
+
 auto FEcsactNetEditorModule::AddMenuEntry(FMenuBuilder& MenuBuilder) -> void {
 	MenuBuilder.BeginSection(
 		"EcsactNetTools",
@@ -153,9 +189,18 @@ auto FEcsactNetEditorModule::AddMenuEntry(FMenuBuilder& MenuBuilder) -> void {
 			FUIAction(FExecuteAction::CreateLambda([this] { UploadAllEcsactFiles(); })
 			)
 		);
+		MenuBuilder.AddMenuEntry(
+			LOCTEXT("EcsactNetAuthAndConnect", "Authorize and Connect"),
+			LOCTEXT(
+				"EcsactNetAuthAndConnect",
+				"Authorize with the Node ID in Project Settings and Connect afterwards"
+			),
+			FSlateIcon(),
+			FUIAction(FExecuteAction::CreateLambda([this] { AuthorizeAndConnect(); }))
+		);
 
-		// These delegates are from other modules that want to put menu items in the
-		// ecsact net tools section
+		// These delegates are from other modules that want to put menu items in
+		// the ecsact net tools section
 		for(auto tool_menu_delegate : ToolMenuExtensionDelegates) {
 			tool_menu_delegate.ExecuteIfBound(MenuBuilder);
 		}

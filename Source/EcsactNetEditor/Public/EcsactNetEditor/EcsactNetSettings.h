@@ -23,4 +23,7 @@ public:
 	 */
 	UPROPERTY(EditAnywhere, Config, Category = "Project")
 	FString ProjectID;
+
+	UPROPERTY(EditAnywhere, Config, Category = "Project")
+	FString NodeId;
 };
