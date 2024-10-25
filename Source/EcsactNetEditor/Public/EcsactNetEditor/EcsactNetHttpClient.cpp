@@ -308,17 +308,17 @@ auto UEcsactNetHttpClient::RefreshIdToken(
 	TDelegate<void(FEcsactRefreshTokenResponse)> OnDone
 ) -> void {
 	constexpr auto api_key = "AIzaSyBKeB1T-abSePIotAnvIKATvInXTfi8UVM";
-	constexpr auto hostname = "securetoken.googleapis.com";
 
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> req =
 		FHttpModule::Get().CreateRequest();
 
 	req->SetVerb("POST");
 	req->SetURL(FString::Format( //
-		TEXT("https://{}/v1/token?key={}"),
-		FStringFormatOrderedArguments{hostname, api_key}
+		TEXT("https://securetoken.googleapis.com/v1/token?key={}"),
+		FStringFormatOrderedArguments{api_key}
 	));
 	req->SetHeader("Content-Type", "application/x-www-form-urlencoded");
+	req->SetHeader("Hostname", "localhost:8080");
 	req->SetContentAsString(FString::Format( //
 		TEXT("grant_type=refresh_token&refresh_token={}"),
 		FStringFormatOrderedArguments{RefreshToken}
