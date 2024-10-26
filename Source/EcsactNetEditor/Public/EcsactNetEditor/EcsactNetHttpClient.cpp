@@ -303,6 +303,27 @@ auto UEcsactNetHttpClient::GetAuthJson() -> TOptional<FEcsactNetAuthJson> {
 	return auth_json;
 }
 
+auto UEcsactNetHttpClient::SaveAuthJson(FEcsactNetAuthJson AuthJson) -> void {
+	auto auth_json_path = EcsactNetEditorUtil::GetAuthJsonPath();
+
+	auto auth_json_str = FString{};
+	auto serialize_success =
+		FJsonObjectConverter::UStructToJsonObjectString(AuthJson, auth_json_str);
+	check(serialize_success);
+
+	auto write_auth_json_success =
+		FFileHelper::SaveStringToFile(auth_json_str, *auth_json_path);
+
+	UE_LOG(EcsactNetEditor, Log, TEXT("Updated %s"), *auth_json_path);
+	UE_LOG(
+		EcsactNetEditor,
+		Log,
+		TEXT("Successfully logged in as %s (%s)"),
+		*AuthJson.display_name,
+		*AuthJson.email
+	);
+}
+
 auto UEcsactNetHttpClient::RefreshIdToken(
 	FString                                      RefreshToken,
 	TDelegate<void(FEcsactRefreshTokenResponse)> OnDone
@@ -325,7 +346,7 @@ auto UEcsactNetHttpClient::RefreshIdToken(
 	));
 
 	req->OnProcessRequestComplete().BindLambda( //
-		[OnDone = std::move(OnDone)](
+		[this, OnDone = std::move(OnDone)](
 			FHttpRequestPtr  Request,
 			FHttpResponsePtr Response,
 			bool             ConnectedSuccessfully
@@ -340,6 +361,11 @@ auto UEcsactNetHttpClient::RefreshIdToken(
 					UE_LOG(LogTemp, Error, TEXT("TODO: handle this error"));
 					return;
 				}
+
+				auto current_auth_json = GetAuthJson().Get({});
+				current_auth_json.id_token = payload.id_token;
+				current_auth_json.refresh_token = payload.refresh_token;
+				SaveAuthJson(current_auth_json);
 				OnDone.ExecuteIfBound(payload);
 			} else {
 				UE_LOG(

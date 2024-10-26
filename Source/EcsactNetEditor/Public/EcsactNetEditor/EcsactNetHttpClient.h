@@ -203,6 +203,7 @@ class ECSACTNETEDITOR_API UEcsactNetHttpClient : public UObject {
 	) -> void;
 
 	auto GetAuthJson() -> TOptional<FEcsactNetAuthJson>;
+	auto SaveAuthJson(FEcsactNetAuthJson AuthJson) -> void;
 
 	auto GetAuthTokenAsync( //
 		TDelegate<void(FString)> Callback
