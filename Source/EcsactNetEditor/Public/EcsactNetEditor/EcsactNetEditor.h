@@ -31,7 +31,7 @@ class ECSACTNETEDITOR_API FEcsactNetEditorModule : public IModuleInterface {
 	) -> void;
 
 	auto UploadAllEcsactFiles() -> void;
-	auto AuthorizeAndConnect() -> void;
+	auto AuthorizeAndConnect(bool bEnableStream) -> void;
 
 public:
 	FEcsactNetEditorModule();

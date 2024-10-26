@@ -134,24 +134,36 @@ auto FEcsactNetEditorModule::UploadAllEcsactFiles() -> void {
 	);
 }
 
-auto FEcsactNetEditorModule::AuthorizeAndConnect() -> void {
+auto FEcsactNetEditorModule::AuthorizeAndConnect(bool bEnableStream) -> void {
 	const auto* settings = GetDefault<UEcsactNetSettings>();
 
 	const auto NodeId = settings->NodeId;
 
 	auto req = FNodeAuthRequest{.nodeId = NodeId, .address = "0.0.0.0"};
 
-	UE_LOG(LogTemp, Log, TEXT("Attempting auth with node ID %s"), *NodeId);
+	UE_LOG(
+		LogTemp,
+		Log,
+		TEXT("Attempting auth with node ID %s (stream enabled %s)"),
+		*NodeId,
+		(bEnableStream ? TEXT("yes") : TEXT("no"))
+	);
 
 	HttpClient->NodeAuth(
 		req,
 		TDelegate<void(FNodeAuthResponse)>::CreateLambda( //
-			[this](FNodeAuthResponse response) {
+			[this, bEnableStream](FNodeAuthResponse response) {
+				auto connection_uri = FString{response.nodeConnectionUri};
+				if(bEnableStream) {
+					connection_uri += "&stream=on";
+				} else {
+					connection_uri += "&stream=off";
+				}
 				UE_LOG(
 					LogTemp,
 					Log,
 					TEXT("Successful auth, connecting with %s URI"),
-					*response.nodeConnectionUri
+					*connection_uri
 				);
 				auto async_runner =
 					Cast<UEcsactAsyncRunner>(EcsactUnrealExecution::Runner());
@@ -175,7 +187,7 @@ auto FEcsactNetEditorModule::AuthorizeAndConnect() -> void {
 				}
 
 				async_runner->Connect(
-					TCHAR_TO_UTF8(*response.nodeConnectionUri),
+					TCHAR_TO_UTF8(*connection_uri),
 					IEcsactAsyncRunnerEvents::FAsyncRequestErrorCallback::CreateLambda(
 						[this](ecsact_async_error err) {
 							UE_LOG(
@@ -218,13 +230,27 @@ auto FEcsactNetEditorModule::AddMenuEntry(FMenuBuilder& MenuBuilder) -> void {
 			)
 		);
 		MenuBuilder.AddMenuEntry(
-			LOCTEXT("EcsactNetAuthAndConnect", "Authorize and Connect"),
+			LOCTEXT("EcsactNetAuthAndConnect", "Authorize and Connect  (stream=off)"),
 			LOCTEXT(
 				"EcsactNetAuthAndConnect",
 				"Authorize with the Node ID in Project Settings and Connect afterwards"
 			),
 			FSlateIcon(),
-			FUIAction(FExecuteAction::CreateLambda([this] { AuthorizeAndConnect(); }))
+			FUIAction(FExecuteAction::CreateLambda([this] {
+				AuthorizeAndConnect(false);
+			}))
+		);
+
+		MenuBuilder.AddMenuEntry(
+			LOCTEXT("EcsactNetAuthAndConnect", "Authorize and Connect (stream=on)"),
+			LOCTEXT(
+				"EcsactNetAuthAndConnect",
+				"Authorize with the Node ID in Project Settings and Connect afterwards"
+			),
+			FSlateIcon(),
+			FUIAction(FExecuteAction::CreateLambda([this] {
+				AuthorizeAndConnect(true);
+			}))
 		);
 
 		// These delegates are from other modules that want to put menu items in
