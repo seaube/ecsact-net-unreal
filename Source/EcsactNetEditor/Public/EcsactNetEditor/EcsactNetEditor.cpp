@@ -154,11 +154,12 @@ auto FEcsactNetEditorModule::AuthorizeAndConnect(bool bEnableStream) -> void {
 		TDelegate<void(FNodeAuthResponse)>::CreateLambda( //
 			[this, bEnableStream](FNodeAuthResponse response) {
 				auto connection_uri = FString{response.nodeConnectionUri};
-				if(bEnableStream) {
-					connection_uri += "&stream=on";
-				} else {
-					connection_uri += "&stream=off";
-				}
+				// NOTE: this may be added in the future
+				// if(bEnableStream) {
+				// 	connection_uri += "&stream=on";
+				// } else {
+				// 	connection_uri += "&stream=off";
+				// }
 				UE_LOG(
 					LogTemp,
 					Log,
@@ -230,19 +231,7 @@ auto FEcsactNetEditorModule::AddMenuEntry(FMenuBuilder& MenuBuilder) -> void {
 			)
 		);
 		MenuBuilder.AddMenuEntry(
-			LOCTEXT("EcsactNetAuthAndConnect", "Authorize and Connect  (stream=off)"),
-			LOCTEXT(
-				"EcsactNetAuthAndConnect",
-				"Authorize with the Node ID in Project Settings and Connect afterwards"
-			),
-			FSlateIcon(),
-			FUIAction(FExecuteAction::CreateLambda([this] {
-				AuthorizeAndConnect(false);
-			}))
-		);
-
-		MenuBuilder.AddMenuEntry(
-			LOCTEXT("EcsactNetAuthAndConnect", "Authorize and Connect (stream=on)"),
+			LOCTEXT("EcsactNetAuthAndConnect", "Authorize and Connect"),
 			LOCTEXT(
 				"EcsactNetAuthAndConnect",
 				"Authorize with the Node ID in Project Settings and Connect afterwards"
