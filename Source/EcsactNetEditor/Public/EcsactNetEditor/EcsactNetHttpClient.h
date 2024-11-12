@@ -52,13 +52,13 @@ struct FEcsactRefreshTokenResponse {
 	GENERATED_BODY()
 
 	UPROPERTY()
-	FString expires_in;
+	FString expiresIn;
 
 	UPROPERTY()
-	FString id_token;
+	FString idToken;
 
 	UPROPERTY()
-	FString refresh_token;
+	FString refreshToken;
 };
 
 USTRUCT()

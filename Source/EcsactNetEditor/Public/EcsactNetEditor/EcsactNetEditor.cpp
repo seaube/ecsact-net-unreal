@@ -160,49 +160,54 @@ auto FEcsactNetEditorModule::AuthorizeAndConnect(bool bEnableStream) -> void {
 				// } else {
 				// 	connection_uri += "&stream=off";
 				// }
-				UE_LOG(
-					LogTemp,
-					Log,
-					TEXT("Successful auth, connecting with %s URI"),
-					*connection_uri
-				);
-				auto async_runner =
-					Cast<UEcsactAsyncRunner>(EcsactUnrealExecution::Runner());
+				//
 
-				if(!async_runner) {
+				for(auto world_context : GEditor->GetWorldContexts()) {
 					UE_LOG(
 						LogTemp,
-						Error,
-						TEXT("Runner is NOT async. Will not connect.")
+						Log,
+						TEXT("Successful auth, connecting with %s URI"),
+						*connection_uri
 					);
-					return;
-				}
-
-				if(async_runner->IsTemplate()) {
-					UE_LOG(
-						LogTemp,
-						Error,
-						TEXT("Runner is a TEMPLATE. Will not connect.")
+					auto async_runner = Cast<UEcsactAsyncRunner>(
+						EcsactUnrealExecution::Runner(world_context.World())
 					);
-					return;
-				}
 
-				async_runner->Connect(
-					TCHAR_TO_UTF8(*connection_uri),
-					IEcsactAsyncRunnerEvents::FAsyncRequestErrorCallback::CreateLambda(
-						[this](ecsact_async_error err) {
-							UE_LOG(
-								LogTemp,
-								Log,
-								TEXT("Connect error %i"),
-								static_cast<int>(err)
-							);
-						}
-					),
-					IEcsactAsyncRunnerEvents::FAsyncRequestDoneCallback::CreateLambda(
-						[this] { UE_LOG(LogTemp, Log, TEXT("Connection successful")); }
-					)
-				);
+					if(!async_runner) {
+						UE_LOG(
+							LogTemp,
+							Error,
+							TEXT("Runner is NOT async. Will not connect.")
+						);
+						return;
+					}
+
+					if(async_runner->IsTemplate()) {
+						UE_LOG(
+							LogTemp,
+							Error,
+							TEXT("Runner is a TEMPLATE. Will not connect.")
+						);
+						return;
+					}
+
+					async_runner->Connect(
+						TCHAR_TO_UTF8(*connection_uri),
+						IEcsactAsyncRunnerEvents::FAsyncRequestErrorCallback::CreateLambda(
+							[this](ecsact_async_error err) {
+								UE_LOG(
+									LogTemp,
+									Log,
+									TEXT("Connect error %i"),
+									static_cast<int>(err)
+								);
+							}
+						),
+						IEcsactAsyncRunnerEvents::FAsyncRequestDoneCallback::CreateLambda(
+							[this] { UE_LOG(LogTemp, Log, TEXT("Connection successful")); }
+						)
+					);
+				}
 			}
 		)
 	);

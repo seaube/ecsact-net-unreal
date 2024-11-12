@@ -264,7 +264,7 @@ auto UEcsactNetHttpClient::GetAuthTokenAsync( //
 			TDelegate<void(FEcsactRefreshTokenResponse)>::CreateLambda(
 				[Callback = std::move(Callback)]( //
 					FEcsactRefreshTokenResponse Res
-				) -> void { Callback.ExecuteIfBound(Res.id_token); }
+				) -> void { Callback.ExecuteIfBound(Res.idToken); }
 			)
 		);
 	} else {
@@ -340,6 +340,7 @@ auto UEcsactNetHttpClient::RefreshIdToken(
 	));
 	req->SetHeader("Content-Type", "application/x-www-form-urlencoded");
 	req->SetHeader("Hostname", "localhost:8080");
+	req->SetHeader("Referer", "http://localhost:8080");
 	req->SetContentAsString(FString::Format( //
 		TEXT("grant_type=refresh_token&refresh_token={}"),
 		FStringFormatOrderedArguments{RefreshToken}
@@ -353,18 +354,24 @@ auto UEcsactNetHttpClient::RefreshIdToken(
 		) -> void {
 			if(ConnectedSuccessfully && Response.IsValid()) {
 				auto payload = FEcsactRefreshTokenResponse{};
+				auto payload_str = Response->GetContentAsString();
 				auto success = FJsonObjectConverter::JsonObjectStringToUStruct(
-					Response->GetContentAsString(),
+					payload_str,
 					&payload
 				);
+				UE_LOG(LogTemp, Log, TEXT("Refresh Token Payload: %s"), *payload_str);
 				if(!success) {
-					UE_LOG(LogTemp, Error, TEXT("TODO: handle this error"));
+					UE_LOG(
+						LogTemp,
+						Error,
+						TEXT("Failed to parse refresh token response")
+					);
 					return;
 				}
 
 				auto current_auth_json = GetAuthJson().Get({});
-				current_auth_json.id_token = payload.id_token;
-				current_auth_json.refresh_token = payload.refresh_token;
+				current_auth_json.id_token = payload.idToken;
+				current_auth_json.refresh_token = payload.refreshToken;
 				SaveAuthJson(current_auth_json);
 				OnDone.ExecuteIfBound(payload);
 			} else {
