@@ -162,36 +162,35 @@ auto FEcsactNetEditorModule::AuthorizeAndConnect(bool bEnableStream) -> void {
 				// }
 				//
 
+				UE_LOG(
+					LogTemp,
+					Log,
+					TEXT("Successful auth, connecting with %s URI"),
+					*connection_uri
+				);
+				UEcsactAsyncRunner* ValidRunner = nullptr;
+
 				for(auto world_context : GEditor->GetWorldContexts()) {
-					UE_LOG(
-						LogTemp,
-						Log,
-						TEXT("Successful auth, connecting with %s URI"),
-						*connection_uri
-					);
-					auto async_runner = Cast<UEcsactAsyncRunner>(
-						EcsactUnrealExecution::Runner(world_context.World())
-					);
+					auto runner =
+						EcsactUnrealExecution::Runner(world_context.World()).Get();
+
+					if(!runner) {
+						continue;
+					}
+
+					check(!runner->IsTemplate());
+
+					auto async_runner = Cast<UEcsactAsyncRunner>(runner);
 
 					if(!async_runner) {
-						UE_LOG(
-							LogTemp,
-							Error,
-							TEXT("Runner is NOT async. Will not connect.")
-						);
-						return;
+						continue;
 					}
 
-					if(async_runner->IsTemplate()) {
-						UE_LOG(
-							LogTemp,
-							Error,
-							TEXT("Runner is a TEMPLATE. Will not connect.")
-						);
-						return;
-					}
+					ValidRunner = async_runner;
+				}
 
-					async_runner->Connect(
+				if(ValidRunner) {
+					ValidRunner->Connect(
 						TCHAR_TO_UTF8(*connection_uri),
 						IEcsactAsyncRunnerEvents::FAsyncRequestErrorCallback::CreateLambda(
 							[this](ecsact_async_error err) {
@@ -206,6 +205,13 @@ auto FEcsactNetEditorModule::AuthorizeAndConnect(bool bEnableStream) -> void {
 						IEcsactAsyncRunnerEvents::FAsyncRequestDoneCallback::CreateLambda(
 							[this] { UE_LOG(LogTemp, Log, TEXT("Connection successful")); }
 						)
+					);
+				} else {
+					UE_LOG(
+						LogTemp,
+						Error,
+						TEXT("Async runner not found after checking %i world context(s). Will not connect"),
+						GEditor->GetWorldContexts().Num()
 					);
 				}
 			}
