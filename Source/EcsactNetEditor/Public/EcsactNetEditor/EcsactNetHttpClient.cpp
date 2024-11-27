@@ -264,7 +264,7 @@ auto UEcsactNetHttpClient::GetAuthTokenAsync( //
 			TDelegate<void(FEcsactRefreshTokenResponse)>::CreateLambda(
 				[Callback = std::move(Callback)]( //
 					FEcsactRefreshTokenResponse Res
-				) -> void { Callback.ExecuteIfBound(Res.idToken); }
+				) -> void { Callback.ExecuteIfBound(Res.id_token); }
 			)
 		);
 	} else {
@@ -335,14 +335,14 @@ auto UEcsactNetHttpClient::RefreshIdToken(
 
 	req->SetVerb("POST");
 	req->SetURL(FString::Format( //
-		TEXT("https://securetoken.googleapis.com/v1/token?key={}"),
+		TEXT("https://securetoken.googleapis.com/v1/token?key={0}"),
 		FStringFormatOrderedArguments{api_key}
 	));
 	req->SetHeader("Content-Type", "application/x-www-form-urlencoded");
 	req->SetHeader("Hostname", "localhost:8080");
 	req->SetHeader("Referer", "http://localhost:8080");
 	req->SetContentAsString(FString::Format( //
-		TEXT("grant_type=refresh_token&refresh_token={}"),
+		TEXT("grant_type=refresh_token&refresh_token={0}"),
 		FStringFormatOrderedArguments{RefreshToken}
 	));
 
@@ -359,7 +359,6 @@ auto UEcsactNetHttpClient::RefreshIdToken(
 					payload_str,
 					&payload
 				);
-				UE_LOG(LogTemp, Log, TEXT("Refresh Token Payload: %s"), *payload_str);
 				if(!success) {
 					UE_LOG(
 						LogTemp,
@@ -369,9 +368,19 @@ auto UEcsactNetHttpClient::RefreshIdToken(
 					return;
 				}
 
+				if(payload.error.code) {
+					UE_LOG(
+						LogTemp,
+						Error,
+						TEXT("Failed to refresh token auth: %s"),
+						*payload.error.message
+					);
+					return;
+				}
+
 				auto current_auth_json = GetAuthJson().Get({});
-				current_auth_json.id_token = payload.idToken;
-				current_auth_json.refresh_token = payload.refreshToken;
+				current_auth_json.id_token = payload.id_token;
+				current_auth_json.refresh_token = payload.refresh_token;
 				SaveAuthJson(current_auth_json);
 				OnDone.ExecuteIfBound(payload);
 			} else {

@@ -48,17 +48,44 @@ struct FEcsactLoginAuthPayload {
 
 USTRUCT()
 
+struct FEcsactRefreshTokenError {
+	GENERATED_BODY()
+
+	UPROPERTY()
+	int code;
+
+	UPROPERTY()
+	FString message;
+
+	UPROPERTY()
+	FString status;
+};
+
+USTRUCT()
+
 struct FEcsactRefreshTokenResponse {
 	GENERATED_BODY()
 
 	UPROPERTY()
-	FString expiresIn;
+	FEcsactRefreshTokenError error;
 
 	UPROPERTY()
-	FString idToken;
+	FString token_type;
 
 	UPROPERTY()
-	FString refreshToken;
+	FString expires_in;
+
+	UPROPERTY()
+	FString id_token;
+
+	UPROPERTY()
+	FString refresh_token;
+
+	UPROPERTY()
+	FString user_id;
+
+	UPROPERTY()
+	FString project_id;
 };
 
 USTRUCT()
