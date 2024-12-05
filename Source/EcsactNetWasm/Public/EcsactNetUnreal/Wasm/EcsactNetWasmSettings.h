@@ -10,6 +10,11 @@ class ECSACTNETWASM_API UEcsactNetWasmSettings : public UObject {
 	GENERATED_BODY() // NOLINT
 
 public:
-	UPROPERTY(EditAnywhere, Config, Category = "Ecsact Net Wasm")
+	UPROPERTY(
+		EditAnywhere,
+		Config,
+		Category = "Ecsact Net Wasm",
+		meta = (RelativeToGameDir)
+	)
 	TArray<FFilePath> SystemImplWasmFiles;
 };

@@ -83,9 +83,14 @@ auto FEcsactNetWasmModule::UploadSystemImpls() -> void {
 	auto requests = TArray<FSystemImplsReplaceRequest>{};
 
 	for(auto wasm_file : settings->SystemImplWasmFiles) {
+		auto file_path = wasm_file.FilePath;
+		if(FPaths::IsRelative(wasm_file.FilePath)) {
+			file_path = FPaths::Combine(FPaths::ProjectDir(), file_path);
+		}
+
 		auto req = FSystemImplsReplaceRequest{};
 		req.fileContentsType = "SYSTEM_IMPL_WASM_BASE64";
-		req.fileContents = ReadFileAsBase64(wasm_file.FilePath);
+		req.fileContents = ReadFileAsBase64(file_path);
 
 		if(req.fileContents.IsEmpty()) {
 			return;
