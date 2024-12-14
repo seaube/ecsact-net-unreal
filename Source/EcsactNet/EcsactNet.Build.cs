@@ -8,7 +8,12 @@ public class EcsactNet : ModuleRules {
 		PublicDependencyModuleNames.AddRange(new string[] {
 			"CoreUObject",
 			"Core",
+			"Ecsact",
 		});
+
+		if (Target.bBuildEditor) {
+			PrivateDependencyModuleNames.Add("EcsactNetEditor");
+		}
 
 		PrivateDependencyModuleNames.AddRange(new string[] {
 			"Engine",

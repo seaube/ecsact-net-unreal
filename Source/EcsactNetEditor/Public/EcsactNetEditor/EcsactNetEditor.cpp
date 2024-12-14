@@ -210,7 +210,8 @@ auto FEcsactNetEditorModule::AuthorizeAndConnect(bool bEnableStream) -> void {
 					UE_LOG(
 						LogTemp,
 						Error,
-						TEXT("Async runner not found after checking %i world context(s). Will not connect"),
+						TEXT("Async runner not found after checking %i world context(s). "
+								 "Will not connect"),
 						GEditor->GetWorldContexts().Num()
 					);
 				}
