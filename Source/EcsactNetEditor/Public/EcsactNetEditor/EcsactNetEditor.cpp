@@ -134,92 +134,6 @@ auto FEcsactNetEditorModule::UploadAllEcsactFiles() -> void {
 	);
 }
 
-auto FEcsactNetEditorModule::AuthorizeAndConnect(bool bEnableStream) -> void {
-	const auto* settings = GetDefault<UEcsactNetSettings>();
-
-	const auto NodeId = settings->NodeId;
-
-	auto req = FNodeAuthRequest{.nodeId = NodeId, .address = "0.0.0.0"};
-
-	UE_LOG(
-		LogTemp,
-		Log,
-		TEXT("Attempting auth with node ID %s (stream enabled %s)"),
-		*NodeId,
-		(bEnableStream ? TEXT("yes") : TEXT("no"))
-	);
-
-	HttpClient->NodeAuth(
-		req,
-		TDelegate<void(FNodeAuthResponse)>::CreateLambda( //
-			[this, bEnableStream](FNodeAuthResponse response) {
-				auto connection_uri = FString{response.nodeConnectionUri};
-				// NOTE: this may be added in the future
-				// if(bEnableStream) {
-				// 	connection_uri += "&stream=on";
-				// } else {
-				// 	connection_uri += "&stream=off";
-				// }
-				//
-
-				UE_LOG(
-					LogTemp,
-					Log,
-					TEXT("Successful auth, connecting with %s URI"),
-					*connection_uri
-				);
-				UEcsactAsyncRunner* ValidRunner = nullptr;
-
-				for(auto world_context : GEditor->GetWorldContexts()) {
-					auto runner =
-						EcsactUnrealExecution::Runner(world_context.World()).Get();
-
-					if(!runner) {
-						continue;
-					}
-
-					check(!runner->IsTemplate());
-
-					auto async_runner = Cast<UEcsactAsyncRunner>(runner);
-
-					if(!async_runner) {
-						continue;
-					}
-
-					ValidRunner = async_runner;
-				}
-
-				if(ValidRunner) {
-					ValidRunner->Connect(
-						TCHAR_TO_UTF8(*connection_uri),
-						IEcsactAsyncRunnerEvents::FAsyncRequestErrorCallback::CreateLambda(
-							[this](ecsact_async_error err) {
-								UE_LOG(
-									LogTemp,
-									Log,
-									TEXT("Connect error %i"),
-									static_cast<int>(err)
-								);
-							}
-						),
-						IEcsactAsyncRunnerEvents::FAsyncRequestDoneCallback::CreateLambda(
-							[this] { UE_LOG(LogTemp, Log, TEXT("Connection successful")); }
-						)
-					);
-				} else {
-					UE_LOG(
-						LogTemp,
-						Error,
-						TEXT("Async runner not found after checking %i world context(s). "
-								 "Will not connect"),
-						GEditor->GetWorldContexts().Num()
-					);
-				}
-			}
-		)
-	);
-}
-
 auto FEcsactNetEditorModule::AddMenuEntry(FMenuBuilder& MenuBuilder) -> void {
 	MenuBuilder.BeginSection(
 		"EcsactNetTools",
@@ -241,17 +155,6 @@ auto FEcsactNetEditorModule::AddMenuEntry(FMenuBuilder& MenuBuilder) -> void {
 			FSlateIcon(),
 			FUIAction(FExecuteAction::CreateLambda([this] { UploadAllEcsactFiles(); })
 			)
-		);
-		MenuBuilder.AddMenuEntry(
-			LOCTEXT("EcsactNetAuthAndConnect", "Authorize and Connect"),
-			LOCTEXT(
-				"EcsactNetAuthAndConnect",
-				"Authorize with the Node ID in Project Settings and Connect afterwards"
-			),
-			FSlateIcon(),
-			FUIAction(FExecuteAction::CreateLambda([this] {
-				AuthorizeAndConnect(true);
-			}))
 		);
 
 		// These delegates are from other modules that want to put menu items in
