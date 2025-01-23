@@ -39,6 +39,10 @@
 			"TargetAllowList": [
 				"Editor"
 			]
+		},
+		{
+			"Name": "Ecsact",
+			"Enabled": true
 		}
 	]
 }

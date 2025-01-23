@@ -21,7 +21,7 @@ public class EcsactNetWasm : ModuleRules {
 			"Ecsact",
 			"Settings",
 			"PropertyEditor",
-			"Http",
+			"HTTP",
 			"Json",
 			"JsonUtilities",
 		});
