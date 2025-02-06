@@ -4,10 +4,6 @@
 DECLARE_LOG_CATEGORY_EXTERN(EcsactNetWasm, Log, All);
 
 class FEcsactNetWasmModule : public IModuleInterface {
-	auto OnSettingsModified() -> bool;
-	auto UploadSystemImpls() -> void;
-	auto AddMenuEntry(class FMenuBuilder&) -> void;
-
 public:
 	auto StartupModule() -> void override;
 	auto ShutdownModule() -> void override;

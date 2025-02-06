@@ -28,6 +28,11 @@
 		},
 		{
 			"Name": "EcsactNetWasm",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "EcsactNetWasmEditor",
 			"Type": "Editor",
 			"LoadingPhase": "Default"
 		}
