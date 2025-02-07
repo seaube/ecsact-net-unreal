@@ -1,7 +1,7 @@
 {
 	"FileVersion": 3,
-	"Version": 0,
-	"VersionName": "0.0.0",
+	"Version": 1,
+	"VersionName": "0.1.0",
 	"FriendlyName": "Ecsact Net",
 	"Description": "Ecsact Net integration for Unreal Engine",
 	"Category": "Other",
@@ -16,8 +16,7 @@
 	"Installed": false,
 	"EngineVersion": "5.5.0",
 	"EnabledByDefault": false,
-	"Modules":
-	[
+	"Modules": [
 		{
 			"Name": "EcsactNet",
 			"Type": "Runtime",
