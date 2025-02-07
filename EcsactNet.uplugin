@@ -1,7 +1,7 @@
 {
 	"FileVersion": 3,
-	"Version": 1,
-	"VersionName": "0.1.0",
+	"Version": 0,
+	"VersionName": "0.0.0",
 	"FriendlyName": "Ecsact Net",
 	"Description": "Ecsact Net integration for Unreal Engine",
 	"Category": "Other",
