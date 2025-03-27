@@ -51,7 +51,7 @@ auto FEcsactNetWasmEditorModule::StartupModule() -> void {
 	);
 
 	check(settings_section.IsValid());
-	auto&       ecsact_net_editor = FEcsactNetEditorModule::Get();
+	auto& ecsact_net_editor = FEcsactNetEditorModule::Get();
 	const auto* settings = GetDefault<UEcsactNetWasmSettings>();
 
 	settings_section->OnModified().BindRaw(
@@ -145,4 +145,4 @@ auto FEcsactNetWasmEditorModule::OnSettingsModified() -> bool {
 auto FEcsactNetWasmEditorModule::ShutdownModule() -> void {
 }
 
-IMPLEMENT_MODULE(FEcsactNetWasmEditorModule, EcsactNetWasmEdior)
+IMPLEMENT_MODULE(FEcsactNetWasmEditorModule, EcsactNetWasmEditor)
